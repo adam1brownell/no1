@@ -65,3 +65,6 @@ flutter_export_environment.sh
 # Android-specific
 android/.gradle/
 android/app/build/
+
+# Project Specific
+/lib/assets/
