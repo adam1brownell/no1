@@ -68,3 +68,4 @@ android/app/build/
 
 # Project Specific
 /lib/assets/
+/lib/db/tables/
