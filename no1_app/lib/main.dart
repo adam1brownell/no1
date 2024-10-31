@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:no1_app/pages/landing.dart';  // Import Landing Page
-import 'package:no1_app/pages/home.dart';     // Import Home Page
+import 'package:no1_app/pages/landing.dart';  
+import 'package:no1_app/pages/home.dart';  
+import 'package:no1_app/pages/add_data.dart';   
 
 
 void main() {
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
       home: const LandingPage(), // Set LandingPage as the initial page
       routes: {
         '/home': (context) => const HomePage(), // Define route for Home Page
+        '/add_data': (context) => const AddDataView(), // Define route for AddDataView
       },
     );
   }

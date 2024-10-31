@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AddDataView extends StatefulWidget {  // Converted AddDataView to StatefulWidget
+  const AddDataView({Key? key}) : super(key: key); // Add const here
+
   @override
   _AddDataViewState createState() => _AddDataViewState();
 }
