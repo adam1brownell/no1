@@ -77,7 +77,41 @@ class _HomePageState extends State<HomePage> {
               ElevatedButton(
                 onPressed: () {
                   setState(() {
-                    activeExp = !activeExp;
+                    if (activeExp) {
+                      {
+                        // Show confirmation dialog to end experiment
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text("End Experiment"),
+                              content: const Text("Are you sure you want to end your experiment early?"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    // End the experiment
+                                    setState(() {
+                                      activeExp = false; // or any additional logic if needed
+                                    });
+                                    Navigator.of(context).pop(); // Close the dialog
+                                  },
+                                  child: const Text("Yes"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(); // Close the dialog without ending the experiment
+                                  },
+                                  child: const Text("No"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
+                    } else {
+                      Navigator.pushNamed(context, '/start_experiment');
+                      activeExp = true;
+                    }
                     print("Experiment Button Clicked, Active: $activeExp");
                   });
                 },
@@ -89,15 +123,13 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      // Navigate to the Data Analysis screen (replace with the actual route)
-                      Navigator.pushNamed(context, '/data_analysis');
+                      Navigator.pushNamed(context, '/data_lab');
                     },
-                    child: const Text('Data Analysis'),
+                    child: const Text('Data Lab'),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton(
                     onPressed: () {
-                      // Navigate to the Experiment Log screen
                       Navigator.pushNamed(context, '/experiment_log');
                     },
                     child: const Text('Experiment Log'),
@@ -175,3 +207,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+"""
+TODO: pulling from User Info
+
+void insertUserInfo() async {
+  UserInfoHelper userInfoHelper = UserInfoHelper();
+
+  UserInfo userInfo = UserInfo(
+    userName: 'Adam',
+    activeExp: true,
+  );
+
+  await userInfoHelper.insertUserInfo(userInfo);
+}
+
+void getUserInfo() async {
+  UserInfoHelper userInfoHelper = UserInfoHelper();
+
+  UserInfo? userInfo = await userInfoHelper.getUserInfo();
+  if (userInfo != null) {
+    print(userInfo.toMap());
+  }
+}
+"""

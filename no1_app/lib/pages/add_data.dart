@@ -237,3 +237,63 @@ class _OuraViewState extends State<OuraView> {
     );
   }
 }
+
+"""
+TODO: Need to add this somewhere, where we initialize the 
+      databases with an explicit schema
+
+// Somewhere in your initialization code
+
+void setupDatasetTables() async {
+  DatasetsHelper datasetsHelper = DatasetsHelper();
+
+  // Create 'oura' table
+  await datasetsHelper.createDatasetTable('oura', {
+    'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+    'date': 'TEXT',
+    'steps': 'INTEGER',
+    'hrv': 'INTEGER',
+  });
+
+  // Create 'apple' table
+  await datasetsHelper.createDatasetTable('apple', {
+    'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+    'date': 'TEXT',
+    'hearbeats': 'INTEGER',
+    'sleep': 'TEXT',
+  });
+}
+"""
+
+
+"""
+TODO: need to implement an insertion for all the API calls
+
+// Example of inserting data into 'oura' table
+
+void insertOuraData() async {
+  DatasetsHelper datasetsHelper = DatasetsHelper();
+
+  DatasetEntry entry = DatasetEntry(data: {
+    'date': '2023-10-01',
+    'steps': 1040,
+    'hrv': 55,
+  });
+
+  await datasetsHelper.insertData('oura', entry);
+}
+
+// Example of inserting data into 'apple' table
+
+void insertAppleData() async {
+  DatasetsHelper datasetsHelper = DatasetsHelper();
+
+  DatasetEntry entry = DatasetEntry(data: {
+    'date': '2023-10-01',
+    'hearbeats': 44,
+    'sleep': 'good',
+  });
+
+  await datasetsHelper.insertData('apple', entry);
+}
+"""
