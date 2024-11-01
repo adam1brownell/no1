@@ -1,4 +1,8 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
+
+// Pages
 import 'package:no1_app/pages/landing.dart';  
 import 'package:no1_app/pages/home.dart';  
 import 'package:no1_app/pages/add_data.dart';   
@@ -6,8 +10,15 @@ import 'package:no1_app/pages/experiment_log.dart';
 import 'package:no1_app/pages/data_lab.dart'; 
 import 'package:no1_app/pages/start_experiment.dart'; 
 
+// Data
+import 'package:no1_app/database/db_helper.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the database
+  await DBHelper().initializeDatabase();
+  
   runApp(const MyApp());
 }
 
@@ -17,7 +28,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'No1 App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -55,56 +66,3 @@ class MyHomePage extends StatelessWidget {
     );
   }
 }
-
-
-"""
-
-TODO: update main for database management
-
-// lib/main.dart
-
-import 'package:flutter/material.dart';
-import 'package:your_app_name/database/datasets_helper.dart';
-import 'package:your_app_name/database/experiment_log_helper.dart';
-import 'package:your_app_name/database/user_info_helper.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Setup dataset tables
-  await setupDatasetTables();
-
-  // Insert sample data
-  await insertOuraData();
-  await insertAppleData();
-  await insertExperimentLog();
-  await insertUserInfo();
-
-  // Retrieve and print data
-  await getOuraData();
-  await getExperimentLogs();
-  await getUserInfo();
-
-  runApp(MyApp());
-}
-
-// Rest of your Flutter app code
-
-class MyApp extends StatelessWidget {
-  // Build your app here
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SQLite Example',
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('SQLite Example'),
-        ),
-        body: Center(
-          child: Text('Check console for output'),
-        ),
-      ),
-    );
-  }
-}
-"""

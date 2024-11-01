@@ -26,16 +26,16 @@ class DataLabPage extends StatelessWidget {
 }
 
 
-"""
-TODO: retrieving from datasets
+// """
+// TODO: retrieving from datasets
 
-void getOuraData() async {
-  DatasetsHelper datasetsHelper = DatasetsHelper();
+// void getOuraData() async {
+//   DatasetsHelper datasetsHelper = DatasetsHelper();
 
-  List<DatasetEntry> entries = await datasetsHelper.getData('oura');
-  for (var entry in entries) {
-    print(entry.data);
-  }
-}
+//   List<DatasetEntry> entries = await datasetsHelper.getData('oura');
+//   for (var entry in entries) {
+//     print(entry.data);
+//   }
+// }
 
-"""
+// """

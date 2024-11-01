@@ -1,4 +1,10 @@
+// lib/pages/start_experiment.dart
+
 import 'package:flutter/material.dart';
+import 'package:no1_app/models/experiment_log.dart';
+import 'package:no1_app/database/experiment_log_helper.dart';
+import 'package:no1_app/database/user_info_helper.dart';
+import 'package:no1_app/models/user_info.dart';
 
 class StartExperimentPage extends StatefulWidget {
   const StartExperimentPage({Key? key}) : super(key: key);
@@ -8,23 +14,93 @@ class StartExperimentPage extends StatefulWidget {
 }
 
 class _StartExperimentPageState extends State<StartExperimentPage> {
+  final ExperimentLogHelper _experimentLogHelper = ExperimentLogHelper();
+  final UserInfoHelper _userInfoHelper = UserInfoHelper();
+
+  // Variables for the older UX
   String? selectedVariable;
-  final List<String> variableOptions = ["A", "B", "C"];
-  final List<String> dependentVariableOptions = ["X", "Y", "Z"];
-  final List<String> selectedDependentVariables = [];
-  double experimentLength = 7;
+  List<String> selectedDependentVariables = [];
+  double experimentLength = 4; // Default length in weeks
+
+  // Options for variables
+  List<String> variableOptions = ['Variable X', 'Variable Y', 'Variable Z'];
+  List<String> dependentVariableOptions = ['Outcome A', 'Outcome B', 'Outcome C'];
+
+  // Function to show custom variable dialog (currently unsupported)
+  void _showCustomVariableDialog(BuildContext context) {
+    // Implement custom variable addition if needed
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Custom variables are not supported yet.')),
+    );
+  }
+
+  // Function to show unsupported feature dialog
+  void _showUnsupportedFeatureDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('This feature is not supported yet.')),
+    );
+  }
+
+  // Function to save the experiment
+  Future<void> _saveExperiment() async {
+    if (selectedVariable == null || selectedDependentVariables.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select variables.')),
+      );
+      return;
+    }
+
+    // Create ExperimentLog object
+    ExperimentLog newExperiment = ExperimentLog(
+      startDate: DateTime.now().toIso8601String(),
+      endDate: null, // Experiment is ongoing
+      indVar: selectedVariable,
+      indSource: 'App', // Assuming the source is the app
+      depVars: selectedDependentVariables,
+      depVarSource: List.filled(selectedDependentVariables.length, 'App'),
+    );
+
+    // Insert into database
+    try {
+      int insertedId = await _experimentLogHelper.insertExperiment(newExperiment);
+      print('Inserted experiment log with ID: $insertedId');
+
+      // Update user_info to set activeExp to true
+      UserInfo? userInfo = await _userInfoHelper.getUserInfo();
+      if (userInfo != null) {
+        userInfo.activeExp = true;
+        await _userInfoHelper.saveUserInfo(userInfo);
+      } else {
+        // Initialize user_info if it doesn't exist
+        userInfo = UserInfo(
+          userName: 'User', // Default username, you can prompt the user for this
+          age: 30, // Default age, you can prompt the user for this
+          activeExp: true,
+        );
+        await _userInfoHelper.saveUserInfo(userInfo);
+      }
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Experiment started successfully!')),
+      );
+
+      // Navigate back
+      Navigator.pop(context);
+    } catch (e) {
+      // Handle errors
+      print('Error inserting experiment log: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start experiment.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Start Experiment"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Navigate back to the previous page
-          },
-        ),
+        title: Text('Start Experiment'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -123,9 +199,9 @@ class _StartExperimentPageState extends State<StartExperimentPage> {
             ),
             Slider(
               value: experimentLength,
-              min: 3,
-              max: 60,
-              divisions: 57,
+              min: 1,
+              max: 12,
+              divisions: 11,
               label: experimentLength.toInt().toString(),
               onChanged: (value) {
                 setState(() {
@@ -134,98 +210,23 @@ class _StartExperimentPageState extends State<StartExperimentPage> {
               },
             ),
             Text(
-              "${experimentLength.toInt()} days",
+              "${experimentLength.toInt()} weeks",
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
 
-            const Spacer(),
+            Spacer(),
 
             // Start Experiment Button
-            Center(
-              child: ElevatedButton(
-                onPressed: (selectedVariable != null && selectedDependentVariables.isNotEmpty)
-                    ? () {
-                        // Logic to start experiment goes here
-                        print("Experiment Started with $selectedVariable and $selectedDependentVariables for ${experimentLength.toInt()} weeks.");
-                        Navigator.pop(context);
-                      }
-                    : null, // Disable button if conditions are not met
-                child: const Text("Start Experiment"),
+            ElevatedButton(
+              onPressed: _saveExperiment,
+              child: Text('Start Experiment'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity, 50), // Make button full-width
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  void _showCustomVariableDialog(BuildContext context) {
-    final TextEditingController variableNameController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Custom Variable"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: variableNameController,
-                decoration: const InputDecoration(
-                  labelText: "Name of variable",
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text("Are you going to track this manually?"),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: const Text("Yes"),
-              onPressed: () {
-                _addCustomVariable(variableNameController.text);
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-            TextButton(
-              child: const Text("No"),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog without adding
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _addCustomVariable(String variableName) {
-    setState(() {
-      if (!variableOptions.contains(variableName) && variableName.isNotEmpty) {
-        variableOptions.add(variableName);
-        selectedVariable = variableName; // Automatically select the new variable
-      }
-    });
-  }
-
-  void _showUnsupportedFeatureDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("srry"),
-          content: const Text("Currently, we cannot support this."),
-          actions: [
-            TextButton(
-              child: const Text("k."),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }

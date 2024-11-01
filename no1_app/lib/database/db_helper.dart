@@ -1,14 +1,24 @@
+// lib/database/db_helper.dart
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart'; // Import for accessing file system
 import 'dart:async';
+import 'dart:io';
 
 class DBHelper {
-  static final DBHelper _instance = DBHelper._internal();
+  // Singleton pattern
+  DBHelper._privateConstructor();
+  static final DBHelper _instance = DBHelper._privateConstructor();
   factory DBHelper() => _instance;
 
   static Database? _database;
 
-  DBHelper._internal();
+  // Public method to initialize the database
+  Future<void> initializeDatabase() async {
+    await deleteDatabaseFile(); // Delete the existing database file if it exists
+    await database; // Initialize the database after deleting
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -26,7 +36,7 @@ class DBHelper {
     );
   }
 
-  FutureOr<void> _onCreate(Database db, int version) async {
+  Future<void> _onCreate(Database db, int version) async {
     // Create experiment_log table
     await db.execute('''
       CREATE TABLE experiment_log (
@@ -45,27 +55,21 @@ class DBHelper {
       CREATE TABLE user_info (
         id INTEGER PRIMARY KEY,
         user_name TEXT,
+        age INTEGER,
         activeExp INTEGER
       )
     ''');
+  }
 
-    // Create datasets tables (e.g., oura, apple)
-    await db.execute('''
-      CREATE TABLE oura (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT,
-        steps INTEGER,
-        hrv INTEGER
-      )
-    ''');
+  // Method to delete the existing database file
+  Future<void> deleteDatabaseFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final path = join(directory.path, 'app_database.db');
+    final file = File(path);
 
-    await db.execute('''
-      CREATE TABLE apple (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT,
-        hearbeats INTEGER,
-        sleep TEXT
-      )
-    ''');
+    if (await file.exists()) {
+      await file.delete();
+      print("Database file deleted.");
+    }
   }
 }

@@ -19,6 +19,7 @@ class ExperimentLog {
     this.depVarSource,
   });
 
+  // Convert ExperimentLog object to Map
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -31,6 +32,7 @@ class ExperimentLog {
     };
   }
 
+  // Create ExperimentLog object from Map
   factory ExperimentLog.fromMap(Map<String, dynamic> map) {
     return ExperimentLog(
       id: map['id'],
