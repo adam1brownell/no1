@@ -31,4 +31,34 @@ class UserInfoHelper {
       return null;
     }
   }
+
+  // Get ouraPullDate
+  Future<String> getOuraPullDate() async {
+    UserInfo? userInfo = await getUserInfo();
+    if (userInfo != null && userInfo.ouraPullDate != null) {
+      return userInfo.ouraPullDate!;
+    } else {
+      // Default to '1970-01-01' if not set
+      return '1970-01-01';
+    }
+  }
+
+  // Update ouraPullDate
+  Future<void> updateOuraPullDate(String newDate) async {
+    UserInfo? userInfo = await getUserInfo();
+    if (userInfo != null) {
+      userInfo.ouraPullDate = newDate;
+      await saveUserInfo(userInfo);
+    } else {
+      // If user_info doesn't exist, create it
+      userInfo = UserInfo(
+        userName: 'User',
+        age: 30,
+        activeExp: false,
+        ouraPullDate: newDate,
+      );
+      await saveUserInfo(userInfo);
+    }
+  }
+  
 }

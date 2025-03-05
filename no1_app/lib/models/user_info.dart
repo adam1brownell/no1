@@ -5,12 +5,14 @@ class UserInfo {
   String userName;
   int age;
   bool activeExp;
+  String? ouraPullDate;
 
   UserInfo({
     this.id = 1,
     required this.userName,
     required this.age,
     required this.activeExp,
+    this.ouraPullDate,
   });
 
   Map<String, dynamic> toMap() {
@@ -19,6 +21,7 @@ class UserInfo {
       'user_name': userName,
       'age': age,
       'activeExp': activeExp ? 1 : 0,
+      'ouraPullDate': ouraPullDate,
     };
   }
 
@@ -28,6 +31,7 @@ class UserInfo {
       userName: map['user_name'],
       age: map['age'],
       activeExp: map['activeExp'] == 1,
+      ouraPullDate: map['ouraPullDate'],
     );
   }
 }

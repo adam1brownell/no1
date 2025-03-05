@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
+// lib/pages/add_data.dart
 
-class AddDataView extends StatefulWidget {  // Converted AddDataView to StatefulWidget
-  const AddDataView({Key? key}) : super(key: key); // Add const here
+import 'package:flutter/material.dart';
+import 'package:no1_app/helpers/oura_helper.dart';
+
+class AddDataView extends StatefulWidget {
+  const AddDataView({Key? key}) : super(key: key);
 
   @override
   _AddDataViewState createState() => _AddDataViewState();
@@ -10,8 +13,8 @@ class AddDataView extends StatefulWidget {  // Converted AddDataView to Stateful
 class _AddDataViewState extends State<AddDataView> {
   List<Device> devices = [
     Device(name: "Garmin", logo: "lib/assets/garmin-logo.jpg", isConnected: false, hasView: true),
-    Device(name: "Oura", logo: "lib/assets/oura-logo.jpg", isConnected: true, hasView: true),
-    Device(name: "Apple HealthKit", logo: "lib/assets/apple-logo.jpg", isConnected: true, hasView: false),
+    Device(name: "Oura", logo: "lib/assets/oura-logo.jpg", isConnected: false, hasView: true),
+    Device(name: "Apple HealthKit", logo: "lib/assets/apple-logo.jpg", isConnected: false, hasView: false),
     Device(name: "Whoop", logo: "lib/assets/whoop-logo.jpg", isConnected: false, hasView: false),
   ];
 
@@ -28,6 +31,7 @@ class _AddDataViewState extends State<AddDataView> {
       ),
       body: Column(
         children: [
+          SizedBox(height: 20),
           Text(
             "Connect a Device",
             style: TextStyle(fontSize: 32),
@@ -51,7 +55,6 @@ class _AddDataViewState extends State<AddDataView> {
           ),
         ],
       ),
-      floatingActionButton: showAlert ? buildDeviceAlert(context) : null,
     );
   }
 
@@ -62,14 +65,8 @@ class _AddDataViewState extends State<AddDataView> {
       idx = index;
     });
 
-    // Debugging equivalent in Flutter
     print("Selected Device: $selectedDevice");
-    print("Select by Index: ${devices[index].name}");
     print("Is Connected: ${devices[index].isConnected}");
-
-    // Commenting out APIManager calls and assuming true
-    print("!= nil result: true"); // Always true
-    print("Is Connected #2: ${devices[index].isConnected}");
 
     if (showSheet) {
       if (selectedDevice == "Garmin") {
@@ -85,8 +82,18 @@ class _AddDataViewState extends State<AddDataView> {
           builder: (context) {
             return OuraView(device: devices[idx]);
           },
-        );
+        ).then((_) {
+          setState(() {
+            // Update the device connection status after the modal is closed
+            devices[idx].isConnected = devices[idx].isConnected;
+          });
+        });
       }
+    } else if (showAlert) {
+      showDialog(
+        context: context,
+        builder: (context) => buildDeviceAlert(context),
+      );
     }
   }
 
@@ -103,6 +110,7 @@ class _AddDataViewState extends State<AddDataView> {
             onPressed: () {
               setState(() {
                 devices[idx].isConnected = true;
+                Navigator.pop(context); // Close the dialog
               });
             },
           ),
@@ -111,6 +119,7 @@ class _AddDataViewState extends State<AddDataView> {
           onPressed: () {
             setState(() {
               showAlert = false;
+              Navigator.pop(context); // Close the dialog
             });
           },
         ),
@@ -143,7 +152,13 @@ class DeviceView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(device.logo, width: 50, height: 50),
-            Text(device.name, style: TextStyle(fontSize: 16, color: device.isConnected ? Colors.white : Colors.grey)),
+            Text(
+              device.name,
+              style: TextStyle(
+                fontSize: 16,
+                color: device.isConnected ? Colors.white : Colors.grey,
+              ),
+            ),
             Divider(color: Colors.grey),
           ],
         ),
@@ -206,6 +221,9 @@ class OuraView extends StatefulWidget {
 
 class _OuraViewState extends State<OuraView> {
   String accessToken = "";
+  bool isLoading = false;
+  bool isValid = true;
+  final OuraHelper _ouraHelper = OuraHelper();
 
   @override
   Widget build(BuildContext context) {
@@ -223,77 +241,57 @@ class _OuraViewState extends State<OuraView> {
               });
             },
           ),
+          SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
-              print("Submitted Oura Token: $accessToken");
-              setState(() {
-                widget.device.isConnected = true;
-              });
-            },
-            child: Text("Submit"),
+            onPressed: isLoading
+                ? null
+                : () async {
+                    setState(() {
+                      isLoading = true;
+                      isValid = true;
+                    });
+                    // Validate Access Token format
+                    if (!_ouraHelper.isAccessTokenFormatValid(accessToken)) {
+                      setState(() {
+                        isLoading = false;
+                        isValid = false;
+                      });
+                      return;
+                    }
+                    // Validate the Access Token
+                    bool success = await _ouraHelper.validateOuraToken(accessToken);
+                    if (success) {
+                      // Save the Access Token securely
+                      await _ouraHelper.saveAccessToken(accessToken);
+                      // Update the device connection status
+                      setState(() {
+                        widget.device.isConnected = true;
+                        isLoading = false;
+                        isValid = true;
+                      });
+                      // Pull data from Oura API
+                      await _ouraHelper.pullOuraData();
+                      // Close the dialog or navigate back
+                      Navigator.pop(context);
+                    } else {
+                      // Invalid Access Token
+                      setState(() {
+                        isLoading = false;
+                        isValid = false;
+                      });
+                    }
+                  },
+            child: isLoading
+                ? CircularProgressIndicator()
+                : Text("Submit"),
           ),
+          if (!isValid)
+            Text(
+              "Invalid Access Token",
+              style: TextStyle(color: Colors.red),
+            ),
         ],
       ),
     );
   }
 }
-
-// """
-// TODO: Need to add this somewhere, where we initialize the 
-//       databases with an explicit schema
-
-// // Somewhere in your initialization code
-
-// void setupDatasetTables() async {
-//   DatasetsHelper datasetsHelper = DatasetsHelper();
-
-//   // Create 'oura' table
-//   await datasetsHelper.createDatasetTable('oura', {
-//     'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
-//     'date': 'TEXT',
-//     'steps': 'INTEGER',
-//     'hrv': 'INTEGER',
-//   });
-
-//   // Create 'apple' table
-//   await datasetsHelper.createDatasetTable('apple', {
-//     'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
-//     'date': 'TEXT',
-//     'hearbeats': 'INTEGER',
-//     'sleep': 'TEXT',
-//   });
-// }
-// """
-
-
-// """
-// TODO: need to implement an insertion for all the API calls
-
-// // Example of inserting data into 'oura' table
-
-// void insertOuraData() async {
-//   DatasetsHelper datasetsHelper = DatasetsHelper();
-
-//   DatasetEntry entry = DatasetEntry(data: {
-//     'date': '2023-10-01',
-//     'steps': 1040,
-//     'hrv': 55,
-//   });
-
-//   await datasetsHelper.insertData('oura', entry);
-// }
-
-// // Example of inserting data into 'apple' table
-
-// void insertAppleData() async {
-//   DatasetsHelper datasetsHelper = DatasetsHelper();
-
-//   DatasetEntry entry = DatasetEntry(data: {
-//     'date': '2023-10-01',
-//     'hearbeats': 44,
-//     'sleep': 'good',
-//   });
-
-//   await datasetsHelper.insertData('apple', entry);
-// }
-// """

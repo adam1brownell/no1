@@ -2,22 +2,19 @@
 
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart'; // Import for accessing file system
 import 'dart:async';
-import 'dart:io';
 
 class DBHelper {
-  // Singleton pattern
-  DBHelper._privateConstructor();
-  static final DBHelper _instance = DBHelper._privateConstructor();
+  static final DBHelper _instance = DBHelper._internal();
   factory DBHelper() => _instance;
 
   static Database? _database;
 
+  DBHelper._internal();
+
   // Public method to initialize the database
   Future<void> initializeDatabase() async {
-    await deleteDatabaseFile(); // Delete the existing database file if it exists
-    await database; // Initialize the database after deleting
+    await database;
   }
 
   Future<Database> get database async {
@@ -31,12 +28,13 @@ class DBHelper {
     String path = join(await getDatabasesPath(), 'app_database.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Incremented version for schema changes
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
+  FutureOr<void> _onCreate(Database db, int version) async {
     // Create experiment_log table
     await db.execute('''
       CREATE TABLE experiment_log (
@@ -56,20 +54,35 @@ class DBHelper {
         id INTEGER PRIMARY KEY,
         user_name TEXT,
         age INTEGER,
-        activeExp INTEGER
+        activeExp INTEGER,
+        ouraPullDate TEXT
+      )
+    ''');
+
+    // Create oura table
+    await db.execute('''
+      CREATE TABLE oura (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        data TEXT
       )
     ''');
   }
 
-  // Method to delete the existing database file
-  Future<void> deleteDatabaseFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final path = join(directory.path, 'app_database.db');
-    final file = File(path);
+  // Handle database upgrades
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add ouraPullDate to user_info table if it doesn't exist
+      await db.execute('ALTER TABLE user_info ADD COLUMN ouraPullDate TEXT');
 
-    if (await file.exists()) {
-      await file.delete();
-      print("Database file deleted.");
+      // Create oura table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS oura (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date TEXT,
+          data TEXT
+        )
+      ''');
     }
   }
 }
